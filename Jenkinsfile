@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18-alpine'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     options {
         timestamps()
@@ -111,8 +116,8 @@ pipeline {
     post {
         always {
             script {
-                echo "🧹 Cleaning up..."
-                cleanWs(deleteDirs: true, patterns: [[pattern: 'node_modules/', type: 'INCLUDE']])
+                echo "🧹 Pipeline cleanup..."
+                // Docker container is automatically cleaned up
             }
         }
 
