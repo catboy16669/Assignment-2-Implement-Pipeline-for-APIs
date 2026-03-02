@@ -168,6 +168,13 @@ app.get('/api/orders/:id', (req, res, next) => {
   res.json({ success: true, data: order });
 });
 
+app.delete('/api/orders/:id', (req, res, next) => {
+  const index = orders.findIndex(o => o.id === req.params.id);
+  if (index === -1) return next(createError(`Order with id '${req.params.id}' not found`, 404));
+  const deleted = orders.splice(index, 1)[0];
+  res.json({ success: true, message: `Order '${deleted.id}' deleted successfully`, data: deleted });
+});
+
 // ── Root ──────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({
