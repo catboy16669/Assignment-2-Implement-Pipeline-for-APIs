@@ -25,6 +25,8 @@ const products = [
   { id: '4', name: 'Coffee Maker',   category: 'Kitchen',     price: 79.99,   stock: 50,  createdAt: '2026-01-09T00:00:00.000Z' },
 ];
 
+const orders = [];
+
 // ── Error Helper ──────────────────────────────────────────────
 const createError = (message, statusCode) => {
   const err = new Error(message);
@@ -119,13 +121,60 @@ app.delete('/api/products/:id', (req, res, next) => {
   res.json({ success: true, message: `Product '${deleted.name}' deleted successfully` });
 });
 
+// ── Order Routes ──────────────────────────────────────────────
+app.post('/api/orders', (req, res, next) => {
+  const { userId, productId, quantity } = req.body;
+  if (!userId || !productId || !quantity) return next(createError('Fields "userId", "productId", and "quantity" are required', 400));
+  if (isNaN(quantity) || quantity <= 0) return next(createError('"quantity" must be a positive number', 400));
+  
+  const user = users.find(u => u.id === userId);
+  if (!user) return next(createError(`User with id '${userId}' not found`, 404));
+  
+  const product = products.find(p => p.id === productId);
+  if (!product) return next(createError(`Product with id '${productId}' not found`, 404));
+  
+  if (product.stock < quantity) return next(createError(`Insufficient stock. Available: ${product.stock}, Requested: ${quantity}`, 400));
+  
+  const totalPrice = product.price * quantity;
+  const newOrder = {
+    id: uuidv4(),
+    userId,
+    userName: user.name,
+    productId,
+    productName: product.name,
+    quantity: parseInt(quantity),
+    unitPrice: product.price,
+    totalPrice,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+  
+  product.stock -= quantity;
+  orders.push(newOrder);
+  res.status(201).json({ success: true, data: newOrder });
+});
+
+app.get('/api/orders', (req, res) => {
+  const { userId, status } = req.query;
+  let result = orders;
+  if (userId) result = result.filter(o => o.userId === userId);
+  if (status)  result = result.filter(o => o.status === status);
+  res.json({ success: true, count: result.length, data: result });
+});
+
+app.get('/api/orders/:id', (req, res, next) => {
+  const order = orders.find(o => o.id === req.params.id);
+  if (!order) return next(createError(`Order with id '${req.params.id}' not found`, 404));
+  res.json({ success: true, data: order });
+});
+
 // ── Root ──────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Assignment2 DevOps API is running!',
     version: '1.0.0',
-    endpoints: { users: '/api/users', products: '/api/products' },
+    endpoints: { users: '/api/users', products: '/api/products', orders: '/api/orders' },
   });
 });
 
