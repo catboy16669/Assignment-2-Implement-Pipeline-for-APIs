@@ -10,11 +10,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install --production
 
-# Copy all source code
+# Copy source code (.dockerignore filters out sensitive files)
 COPY . .
 
 # Expose the port your app runs on
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "server.js"]
+CMD ["node", "index.js"]
